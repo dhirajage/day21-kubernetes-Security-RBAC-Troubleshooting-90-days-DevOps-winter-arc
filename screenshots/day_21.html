@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>DevOps Winter Arc — Day 21 Kubernetes Security, RBAC & Troubleshooting Presentation</title>
+  <style>
+    @page {
+      size: A4 landscape;
+      margin: 0;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: #0b0f19;
+      color: #e2e8f0;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+    .slide {
+      width: 297mm;
+      height: 210mm;
+      page-break-after: always;
+      page-break-inside: avoid;
+      padding: 12mm 16mm;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      background: #0b0f19;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* COVER POSTER STYLING (SLIDE 1) */
+    .slide-cover {
+      background: #dbeafe !important;
+      color: #0f172a !important;
+      border: 3px solid #3b82f6;
+      padding: 14mm 18mm;
+    }
+    .slide-cover .header { border-bottom: 2.5px solid #2563eb; margin-bottom: 10px; }
+    .slide-cover .header-banner { color: #1d4ed8; font-weight: 800; font-size: 13px; margin-bottom: 4px; }
+    .slide-cover .header h1 { color: #0f172a; font-weight: 900; font-size: 24px; }
+    .slide-cover .task-category { background-color: #1d4ed8; color: #ffffff; font-size: 12px; font-weight: 800; padding: 4px 10px; border-radius: 6px; }
+    .slide-cover .grid-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .slide-cover .terminal-card { background: #090d16; border: 2px solid #1e3a8a; border-radius: 8px; overflow: hidden; box-shadow: 0 6px 16px rgba(15,23,42,0.25); }
+    .slide-cover .terminal-header { background: #1e293b; padding: 6px 10px; display: flex; align-items: center; gap: 6px; border-bottom: 1.5px solid #334155; }
+    .slide-cover .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+    .slide-cover .dot-red { background: #ef4444; } .slide-cover .dot-yellow { background: #f59e0b; } .slide-cover .dot-green { background: #10b981; }
+    .slide-cover .terminal-title { font-size: 11.5px; color: #f8fafc; font-family: monospace; font-weight: 700; }
+    .slide-cover .terminal-body { padding: 12px; font-family: monospace; font-size: 11.5px; color: #38bdf8; line-height: 1.5; }
+    .slide-cover .terminal-body .cmd { color: #ffffff; font-weight: 800; }
+    .slide-cover .terminal-body .comment { color: #94a3b8; font-weight: 600; }
+    .slide-cover .terminal-body .success { color: #4ade80; font-weight: 700; }
+    .slide-cover .mission-card { background: #eff6ff; border: 2px solid #3b82f6; border-radius: 8px; padding: 14px; display: flex; flex-direction: column; justify-content: space-between; }
+    .slide-cover .mission-title { font-size: 14px; font-weight: 900; color: #1e3a8a; border-bottom: 2px solid #2563eb; padding-bottom: 4px; text-transform: uppercase; margin-bottom: 8px; }
+    .slide-cover .mission-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+    .slide-cover .mission-list li { font-size: 12px; color: #0f172a; font-weight: 800; display: flex; align-items: center; gap: 8px; }
+    .slide-cover .checkbox { color: #1d4ed8; font-weight: 900; font-size: 14px; }
+    .slide-cover .footer { border-top: 2.5px solid #2563eb; color: #1e3a8a; font-weight: 800; font-size: 11px; }
+
+    /* SLIDE CONTENT STYLING */
+    .header {
+      border-bottom: 1px solid #334155;
+      padding-bottom: 8px;
+      margin-bottom: 8px;
+      display: flex;
+      flex-direction: column;
+    }
+    .header-banner {
+      font-size: 11px;
+      font-weight: 600;
+      color: #38bdf8;
+      letter-spacing: 0.3px;
+      margin-bottom: 3px;
+    }
+    .header-main-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+    .task-category {
+      font-size: 11px;
+      font-weight: 600;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      background-color: #1e293b;
+      padding: 3px 8px;
+      border-radius: 4px;
+      display: inline-block;
+    }
+    .header h1 {
+      font-size: 18px;
+      color: #38bdf8;
+      font-weight: 700;
+    }
+    .content {
+      display: block;
+      width: 100%;
+    }
+    p, li {
+      font-size: 12.5px;
+      line-height: 1.35;
+      color: #cbd5e1;
+      margin-bottom: 6px;
+    }
+    .img-container {
+      width: 100%;
+      text-align: center;
+      background: #020617;
+      border: 1px solid #1e293b;
+      border-radius: 6px;
+      padding: 4px;
+    }
+    .img-container img {
+      max-width: 100%;
+      max-height: 112mm;
+      height: auto;
+      object-fit: contain;
+      border-radius: 4px;
+      display: block;
+      margin: 0 auto;
+    }
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid #1e293b;
+      padding-top: 6px;
+      margin-top: 6px;
+      font-size: 11px;
+      color: #64748b;
+    }
+    .footer .mentors {
+      color: #94a3b8;
+      font-weight: 500;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 6px;
+      font-size: 11.5px;
+    }
+    th, td {
+      border: 1px solid #334155;
+      padding: 8px 10px;
+      text-align: left;
+    }
+    th {
+      background-color: #1e293b;
+      color: #38bdf8;
+      font-weight: 600;
+    }
+    td {
+      background-color: #0f172a;
+      color: #e2e8f0;
+    }
+    .summary-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 4px;
+    }
+    .summary-card {
+      background-color: #0f172a;
+      border: 1px solid #1e293b;
+      border-radius: 6px;
+      padding: 10px 12px;
+    }
+    .summary-card h2 {
+      font-size: 13.5px;
+      color: #38bdf8;
+      margin-bottom: 5px;
+      border-bottom: 1px solid #334155;
+      padding-bottom: 3px;
+    }
+    .summary-card ul {
+      list-style-type: disc;
+      padding-left: 14px;
+    }
+    .summary-card li {
+      font-size: 11px;
+      margin-bottom: 3px;
+      line-height: 1.3;
+    }
+
+    @media print {
+      html, body {
+        width: 297mm;
+        height: 210mm;
+        background-color: #0b0f19 !important;
+      }
+      .slide {
+        page-break-after: always !important;
+        page-break-inside: avoid !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- SLIDE 1: COVER POSTER -->
+  <div class="slide slide-cover">
+    <div class="header">
+      <div class="header-banner">DEVOPS WINTER ARC — 90 DAYS CHALLENGE | LEARN • PRACTICE • BUILD • GROW</div>
+      <div class="header-main-row">
+        <h1>Day 21: Kubernetes Security, RBAC & Troubleshooting</h1>
+        <span class="task-category">COVER SLIDE / OVERVIEW</span>
+      </div>
+    </div>
+    <div class="content" style="display: flex; flex-direction: column; gap: 10px; justify-content: center;">
+      <div class="grid-2col">
+        <div class="terminal-card">
+          <div class="terminal-header">
+            <span class="dot dot-red"></span><span class="dot dot-yellow"></span><span class="dot dot-green"></span>
+            <span class="terminal-title">ubuntu@master-node:~$ kubectl</span>
+          </div>
+          <div class="terminal-body">
+            <span class="comment"># RBAC Authorization, Pod Security Standards & Debugging</span><br>
+            <span class="cmd">$ kubectl create namespace secure</span><br>
+            <span class="cmd">$ kubectl apply -f rbac.yaml</span><br>
+            <span class="cmd">$ kubectl label namespace secure pod-security.kubernetes.io/enforce=restricted</span><br>
+            <span class="cmd">$ kubectl apply -f secure-pod.yaml</span><br>
+            <span class="success">Status: Least-Privilege RBAC & Restricted Pod Security Verified</span>
+          </div>
+        </div>
+        <div class="mission-card">
+          <div>
+            <div class="mission-title">MISSION ROADMAP (01 TO 08)</div>
+            <ul class="mission-list">
+              <li><span class="checkbox">✓</span> <strong>01:</strong> RBAC Role, ServiceAccount & Can-I Check (Task A)</li>
+              <li><span class="checkbox">✓</span> <strong>02:</strong> Namespace Restricted Pod Security Enforcement (Task B)</li>
+              <li><span class="checkbox">✓</span> <strong>03:</strong> Hardened Non-Root Pod Deployment (Task B)</li>
+              <li><span class="checkbox">✓</span> <strong>04:</strong> Root Pod Policy Violation Rejection (Task B)</li>
+              <li><span class="checkbox">✓</span> <strong>05:</strong> Three Broken Deployments Setup & Diagnostics (Task C)</li>
+              <li><span class="checkbox">✓</span> <strong>06:</strong> Fixing ImagePullBackOff (broken1)</li>
+              <li><span class="checkbox">✓</span> <strong>07:</strong> Fixing CrashLoopBackOff (broken2)</li>
+              <li><span class="checkbox">✓</span> <strong>08:</strong> Fixing Pending Resource Limits (broken3) & Cleanup</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="footer">
+      <span>Kubernetes Kind Cluster Environment (Ubuntu Master Node)</span>
+      <span class="mentors">DevOps Universe • @DevOps Jadeja</span>
+      <span>Slide 1 of 11</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 2: CORE CONCEPTS & ARCHITECTURE -->
+  <div class="slide">
+    <div class="header">
+      <div class="header-banner">Day 21: Kubernetes Security, RBAC & Troubleshooting</div>
+      <div class="header-main-row">
+        <h1>01 / Core Concepts: RBAC, Pod Security & Debugging Workflow</h1>
+        <span class="task-category">Section 01 / Concepts</span>
+      </div>
+    </div>
+    <div class="content">
+      <div class="summary-grid">
+        <div class="summary-card">
+          <h2 style="color: #38bdf8;">Security & Authorization Mechanisms</h2>
+          <ul>
+            <li><strong>ServiceAccount:</strong> Identity used by pods, applications, or automation tools to authenticate to the API server.</li>
+            <li><strong>Role & RoleBinding:</strong> Namespaced permissions and bindings. Deny-by-default; grant only required verbs.</li>
+            <li><strong>Pod Security Standards:</strong> Privileged, Baseline, and Restricted profiles. Restricted is the strongest profile.</li>
+            <li><strong>Hardened SecurityContext:</strong> Enforces <code>runAsNonRoot: true</code>, <code>readOnlyRootFilesystem: true</code>, and capability drops.</li>
+            <li><strong>Debug Order:</strong> <code>get → describe → logs → events → exec</code>. Always inspect status and Events first.</li>
+          </ul>
+        </div>
+        <div class="summary-card">
+          <h2 style="color: #38bdf8;">Essential kubectl Commands for Day 21</h2>
+          <ul>
+            <li><code>kubectl auth can-i ... --as-system:...</code> — Verify effective RBAC permissions.</li>
+            <li><code>kubectl label namespace secure ...</code> — Enforce Pod Security Standards on a namespace.</li>
+            <li><code>kubectl describe pod &lt;pod-name&gt; -n lab</code> — Inspect scheduling failures and probe events.</li>
+            <li><code>kubectl logs &lt;pod-name&gt; -n lab --previous</code> — Retrieve crash logs from exited containers.</li>
+            <li><code>kubectl set image deployment/...</code> — Update container image tags to resolve pull errors.</li>
+            <li><code>kubectl delete namespace secure lab</code> — Clean up lab resources after verification.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="footer">
+      <span>Kubernetes Kind Cluster Environment (Ubuntu Master Node)</span>
+      <span>Slide 2 of 11</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 3: TASK A - RBAC & SERVICEACCOUNT SETUP -->
+  <div class="slide">
+    <div class="header">
+      <div class="header-banner">Day 21: Kubernetes Security, RBAC & Troubleshooting</div>
+      <div class="header-main-row">
+        <h1>02 / RBAC Setup & Permission Verification (Task A)</h1>
+        <span class="task-category">Section 02 / Task A</span>
+      </div>
+    </div>
+    <div class="content">
+      <p><strong>Task A:</strong> Created namespace <code>secure</code>, ServiceAccount <code>viewer</code>, namespace <code>lab</code>, and applied <code>rbac.yaml</code> granting read-only pod access. Verified with <code>kubectl auth can-i</code>.</p>
+      <div class="summary-grid">
+        <div class="img-container">
+          <img src="task-1.png" alt="Task A RBAC Creation and kubectl auth can-i Output">
+        </div>
+        <div class="summary-card" style="display: flex; flex-direction: column; justify-content: center;">
+          <h2 style="color: #38bdf8;">Task A Execution Highlights</h2>
+          <ul>
+            <li>Created namespace <code>secure</code> and ServiceAccount <code>viewer</code>.</li>
+            <li>Authored <code>rbac.yaml</code> defining a Role (`pod-reader`) with verbs <code>get</code>, <code>list</code>, <code>watch</code> on resources <code>pods</code> and <code>pods/log</code>.</li>
+            <li>Bound role via RoleBinding (`viewer-pods`).</li>
+            <li>Verified permissions: <code>kubectl auth can-i get pods</code> returned <strong>yes</strong>, and <code>delete pods</code> returned <strong>no</strong>.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="footer">
+      <span>Kubernetes Kind Cluster Environment (Ubuntu Master Node)</span>
+      <span>Slide 3 of 11</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 4: TASK B - POD SECURITY STANDARDS & SECURE POD -->
+  <div class="slide">
+    <div class="header">
+      <div class="header-banner">Day 21: Kubernetes Security, RBAC & Troubleshooting</div>
+      <div class="header-main-row">
+        <h1>03 / Restricted Pod Security Enforcement & Secure Pod (Task B)</h1>
+        <span class="task-category">Section 03 / Task B</span>
+      </div>
+    </div>
+    <div class="content">
+      <p><strong>Task B:</strong> Labeled namespace <code>secure</code> with restricted enforcement and deployed a fully hardened <code>secure-pod.yaml</code> running as non-root with read-only root filesystem.</p>
+      <div class="summary-grid">
+        <div class="img-container">
+          <img src="task-2-1.png" alt="Task B Namespace Labeling and secure-pod Execution">
+        </div>
+        <div class="summary-card" style="display: flex; flex-direction: column; justify-content: center;">
+          <h2 style="color: #38bdf8;">Hardened Pod Specifications</h2>
+          <ul>
+            <li>Enforced restricted policy: <code>kubectl label namespace secure pod-security.kubernetes.io/enforce=restricted</code>.</li>
+            <li>Configured <code>runAsNonRoot: true</code> and <code>runAsUser: 10001</code>.</li>
+            <li>Applied <code>seccompProfile: RuntimeDefault</code> and dropped all capabilities.</li>
+            <li>Verified <code>secure-pod</code> successfully reaches <code>Running (1/1)</code> status.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="footer">
+      <span>Kubernetes Kind Cluster Environment (Ubuntu Master Node)</span>
+      <span>Slide 4 of 11</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 5: TASK B (CONT.) - ROOT POD REJECTION -->
+  <div class="slide">
+    <div class="header">
+      <div class="header-banner">Day 21: Kubernetes Security, RBAC & Troubleshooting</div>
+      <div class="header-main-row">
+        <h1>04 / Root Pod Policy Violation Rejection (Task B)</h1>
+        <span class="task-category">Section 04 / Task B (Cont.)</span>
+      </div>
+    </div>
+    <div class="content">
+      <p><strong>Task B (Cont.):</strong> Attempted to deploy a root-privileged pod to test policy enforcement. The admission controller successfully rejected the pod for violating restricted Pod Security Standards.</p>
+      <div class="summary-grid">
+        <div class="img-container">
+          <img src="task-2-2.png" alt="Task B Root Pod Rejection Output">
+        </div>
+        <div class="summary-card" style="display: flex; flex-direction: column; justify-content: center;">
+          <h2 style="color: #38bdf8;">Policy Enforcement Evidence</h2>
+          <ul>
+            <li>Executed <code>kubectl run root-pod --image=nginx:1.27 -n secure</code>.</li>
+            <li><strong>Rejection Error:</strong> Forbidden due to missing privilege escalation settings, unrestricted capabilities, missing non-root execution, and default seccomp profile.</li>
+            <li>Proves that the restricted policy actively safeguards namespace workloads without weakening security.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="footer">
+      <span>Kubernetes Kind Cluster Environment (Ubuntu Master Node)</span>
+      <span>Slide 5 of 11</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 6: TASK C - THREE BROKEN DEPLOYMENTS INITIAL STATE -->
+  <div class="slide">
+    <div class="header">
+      <div class="header-banner">Day 21: Kubernetes Security, RBAC & Troubleshooting</div>
+      <div class="header-main-row">
+        <h1>05 / Three Broken Deployments Creation & Initial Inspection (Task C)</h1>
+        <span class="task-category">Section 05 / Task C</span>
+      </div>
+    </div>
+    <div class="content">
+      <p><strong>Task C:</strong> Created namespace <code>lab</code> and deployed three intentionally broken workloads (<code>broken1</code>, <code>broken2</code>, <code>broken3</code>) to practice systematic root-cause debugging.</p>
+      <div class="summary-grid">
+        <div class="img-container">
+          <img src="task-3-1.png" alt="Task C Initial Deployment Creation and Errors">
+        </div>
+        <div class="summary-card" style="display: flex; flex-direction: column; justify-content: center;">
+          <h2 style="color: #38bdf8;">Initial Symptoms Observed</h2>
+          <ul>
+            <li><code>broken1</code> (nginx:1.99.99): <strong>ErrImagePull</strong> due to invalid image tag.</li>
+            <li><code>broken2</code> (busybox running <code>exit 1</code>): <strong>CrashLoopBackOff</strong> due to immediate exit.</li>
+            <li><code>broken3</code> (nginx requesting 64Gi): <strong>Pending</strong> because kind node lacks 64Gi RAM.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="footer">
+      <span>Kubernetes Kind Cluster Environment (Ubuntu Master Node)</span>
+      <span>Slide 6 of 11</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 7: TASK C (CONT.) - REPAIRING BROKEN1 & BROKEN3 -->
+  <div class="slide">
+    <div class="header">
+      <div class="header-banner">Day 21: Kubernetes Security, RBAC & Troubleshooting</div>
+      <div class="header-main-row">
+        <h1>06 / Repairing broken1 (Image Tag) & broken3 (Resources)</h1>
+        <span class="task-category">Section 06 / Task C (Cont.)</span>
+      </div>
+    </div>
+    <div class="content">
+      <p><strong>Task C (Cont.):</strong> Fixed <code>broken1</code> by updating to a valid image tag (`nginx:1.27`) and repaired <code>broken3</code> by reducing memory request from 64Gi to 64Mi.</p>
+      <div class="summary-grid">
+        <div class="img-container">
+          <img src="task-3-2.png" alt="Task C broken1 Image Fix">
+        </div>
+        <div class="img-container">
+          <img src="task-3-3.png" alt="Task C broken3 Memory Resource Fix">
+        </div>
+      </div>
+    </div>
+    <div class="footer">
+      <span>Kubernetes Kind Cluster Environment (Ubuntu Master Node)</span>
+      <span>Slide 7 of 11</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 8: TASK C (CONT.) - REPAIRING BROKEN2 & ALL RUNNING -->
+  <div class="slide">
+    <div class="header">
+      <div class="header-banner">Day 21: Kubernetes Security, RBAC & Troubleshooting</div>
+      <div class="header-main-row">
+        <h1>07 / Repairing broken2 (Command Fix) & Full Cluster Verification</h1>
+        <span class="task-category">Section 07 / Task C (Cont.)</span>
+      </div>
+    </div>
+    <div class="content">
+      <p><strong>Task C (Cont.):</strong> Patched <code>broken2</code> container command to a long-running process (`sleep 3600`) and verified all three deployments and pods reach <code>Running (1/1)</code>.</p>
+      <div class="summary-grid">
+        <div class="img-container">
+          <img src="task-3-4.png" alt="Task C broken2 Patch and All Pods Running">
+        </div>
+        <div class="summary-card" style="display: flex; flex-direction: column; justify-content: center;">
+          <h2 style="color: #38bdf8;">Repair Verification Summary</h2>
+          <ul>
+            <li><code>broken1-676db6584f-xkkl5</code>: Running (0 restarts).</li>
+            <li><code>broken2-b86dc56b-2g599</code>: Running (0 restarts) after sleep patch.</li>
+            <li><code>broken3-75dfd4dc58-c4fzs</code>: Running (0 restarts) with realistic 64Mi memory request.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="footer">
+      <span>Kubernetes Kind Cluster Environment (Ubuntu Master Node)</span>
+      <span>Slide 8 of 11</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 9: TROUBLESHOOTING & DEBUG NOTES TABLE -->
+  <div class="slide">
+    <div class="header">
+      <div class="header-banner">Day 21: Kubernetes Security, RBAC & Troubleshooting</div>
+      <div class="header-main-row">
+        <h1>08 / Troubleshooting & Debug Notes Matrix</h1>
+        <span class="task-category">Section 08 / Diagnostics</span>
+      </div>
+    </div>
+    <div class="content">
+      <table>
+        <thead>
+          <tr>
+            <th>Deployment</th>
+            <th>Symptom / Evidence</th>
+            <th>Root Cause</th>
+            <th>Fix / Final Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>broken1</strong></td>
+            <td>ErrImagePull / ImagePullBackOff</td>
+            <td>Invalid image tag (`nginx:1.99.99`)</td>
+            <td>Set valid tag (`nginx:1.27`) via <code>kubectl set image</code>. Status: <strong>Running (1/1)</strong>.</td>
+          </tr>
+          <tr>
+            <td><strong>broken2</strong></td>
+            <td>CrashLoopBackOff (Exit code 1)</td>
+            <td>Container command exited immediately (`sh -c "exit 1"`)</td>
+            <td>Patched command to long-running process (`sleep 3600`). Status: <strong>Running (1/1)</strong>.</td>
+          </tr>
+          <tr>
+            <td><strong>broken3</strong></td>
+            <td>Pending (Scheduling failure)</td>
+            <td>Excessive memory request (`64Gi`) exceeds node capacity</td>
+            <td>Reduced memory request to `64Mi` via <code>kubectl set resources</code>. Status: <strong>Running (1/1)</strong>.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="footer">
+      <span>Kubernetes Kind Cluster Environment (Ubuntu Master Node)</span>
+      <span>Slide 9 of 11</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 10: CLEANUP & DELIVERABLES -->
+  <div class="slide">
+    <div class="header">
+      <div class="header-banner">Day 21: Kubernetes Security, RBAC & Troubleshooting</div>
+      <div class="header-main-row">
+        <h1>09 / Lab Cleanup & Repository Deliverables</h1>
+        <span class="task-category">Section 09 / Deliverables</span>
+      </div>
+    </div>
+    <div class="content">
+      <p>Successfully completed lab objectives, verified RBAC and Pod Security Standards, repaired broken deployments, and cleaned up lab namespaces.</p>
+      <div class="summary-grid">
+        <div class="img-container">
+          <img src="task-3-5.png" alt="Namespace Cleanup Execution">
+        </div>
+        <div class="summary-card" style="display: flex; flex-direction: column; justify-content: center;">
+          <h2 style="color: #38bdf8;">GitHub Repository Structure</h2>
+          <ul>
+            <li><strong>Directory:</strong> <code>day21-security-debug/</code></li>
+            <li><strong>Files:</strong> <code>rbac.yaml</code>, <code>secure-pod.yaml</code>, <code>README.md</code></li>
+            <li><strong>Folder:</strong> <code>screenshot/</code> containing task execution evidence.</li>
+            <li><strong>Cleanup Command:</strong> <code>kubectl delete namespace secure lab</code>.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="footer">
+      <span>Kubernetes Kind Cluster Environment (Ubuntu Master Node)</span>
+      <span>Slide 10 of 11</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 11: INTERVIEW READINESS Q&A -->
+  <div class="slide">
+    <div class="header">
+      <div class="header-banner">Day 21: Kubernetes Security, RBAC & Troubleshooting</div>
+      <div class="header-main-row">
+        <h1>10 / Interview Readiness & Architecture Q&A</h1>
+        <span class="task-category">Section 10 / Interview Q&A</span>
+      </div>
+    </div>
+    <div class="content">
+      <div class="summary-grid">
+        <div class="summary-card">
+          <h2 style="color: #38bdf8;">1. What is RBAC and how do you verify it?</h2>
+          <ul>
+            <li>Controls who can perform actions on resources within a scope. Verified using <code>kubectl auth can-i</code>.</li>
+          </ul>
+        </div>
+        <div class="summary-card">
+          <h2 style="color: #38bdf8;">2. Why avoid running containers as root?</h2>
+          <ul>
+            <li>Non-root execution significantly limits the blast radius of a compromised or vulnerable application.</li>
+          </ul>
+        </div>
+        <div class="summary-card">
+          <h2 style="color: #38bdf8;">3. What are Pod Security Standards?</h2>
+          <ul>
+            <li>Profiles named Privileged, Baseline, and Restricted that enforce security best practices at the namespace level.</li>
+          </ul>
+        </div>
+        <div class="summary-card">
+          <h2 style="color: #38bdf8;">4. What is the standard debugging order?</h2>
+          <ul>
+            <li><code>get → describe → logs → events → exec</code>. Always inspect status and Events before modifying configurations.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="footer">
+      <span>Kubernetes Kind Cluster Environment (Ubuntu Master Node)</span>
+      <span>Slide 11 of 11</span>
+    </div>
+  </div>
+
+</body>
+</html>
